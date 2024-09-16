@@ -4,7 +4,7 @@ import { Submission } from './schema/submission.schema';
 import { Model, Types } from 'mongoose';
 import { Order } from './schema/order.schema';
 import axios from 'axios';
-import { Constant } from '../../../constant';
+import { Constant } from 'src/utils/constants';
 
 @Injectable()
 export class SubmissionService {
@@ -58,7 +58,7 @@ export class SubmissionService {
         { cashfreeResponse: response },
       );
 
-      return response;
+      return response.data;
     } catch (e) {
       console.log('error===========', e);
     }
