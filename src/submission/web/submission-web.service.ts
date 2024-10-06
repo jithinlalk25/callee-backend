@@ -6,6 +6,7 @@ import { FormService } from 'src/form/form.service';
 import { AmountTypeEnum } from 'src/form/schema/form.schema';
 import { Constant } from 'src/utils/constants';
 import { PaymentService } from 'src/payment/payment.service';
+import { hasFormExpired } from 'src/utils/utils';
 
 @Injectable()
 export class SubmissionWebService {
@@ -15,8 +16,19 @@ export class SubmissionWebService {
     private paymentService: PaymentService,
   ) {}
 
-  async submit(formId: Types.ObjectId, data: any) {
-    const form = await this.formService.getFormById(formId);
+  async submit(formId: Types.ObjectId, formVersion: string, data: any) {
+    const form = await this.formService.getFormByQuery({
+      _id: formId,
+      version: formVersion,
+    });
+
+    if (!form) {
+      throw new Error('Form not found');
+    }
+
+    if (form.expiry && hasFormExpired(form.expiry)) {
+      throw new Error('Form expired');
+    }
 
     form.fields.forEach((field) => {
       if (!(field.id in data.fields)) {
@@ -57,6 +69,9 @@ export class SubmissionWebService {
       orderId: new Types.ObjectId(order.order_id),
     });
 
-    return { paymentSessionId: order.payment_session_id };
+    return {
+      paymentSessionId: order.payment_session_id,
+      returnUrl: order.order_meta.return_url,
+    };
   }
 }

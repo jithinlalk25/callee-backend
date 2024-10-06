@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Types, Schema as MongooseSchema } from 'mongoose';
 
 export type FormDocument = HydratedDocument<Form>;
 
@@ -7,6 +7,11 @@ export enum AmountTypeEnum {
   FIXED = 'FIXED',
   CUSTOM = 'CUSTOM',
   QUANTITY = 'QUANTITY',
+}
+
+export enum FormStatusEnum {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
 }
 
 @Schema()
@@ -27,6 +32,9 @@ class QuantityField {
 @Schema({ collection: 'Form', versionKey: false, timestamps: true })
 export class Form {
   _id: Types.ObjectId;
+
+  @Prop()
+  version: string;
 
   @Prop({ index: true })
   userId: Types.ObjectId;
@@ -55,8 +63,17 @@ export class Form {
   @Prop({ default: 0 })
   amountCollected: number;
 
+  @Prop({ default: null })
+  expiry: string;
+
+  @Prop({ default: FormStatusEnum.ACTIVE })
+  status: FormStatusEnum;
+
   @Prop({ default: false })
   isDeleted: boolean;
+
+  @Prop({ default: [] })
+  history: MongooseSchema.Types.Mixed[];
 }
 
 export const FormSchema = SchemaFactory.createForClass(Form);

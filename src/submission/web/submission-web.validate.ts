@@ -4,6 +4,7 @@ export const submitVf = compileSchema({
   type: 'object',
   properties: {
     formId: { type: 'string' },
+    formVersion: { type: 'string' },
     data: {
       type: 'object',
       properties: {
@@ -13,5 +14,5 @@ export const submitVf = compileSchema({
       },
     },
   },
-  required: ['formId', 'data'],
+  required: ['formId', 'data', 'formVersion'],
 });

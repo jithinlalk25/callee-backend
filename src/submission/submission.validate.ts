@@ -5,6 +5,7 @@ export const getSubmissionsVf = compileSchema({
   properties: {
     formId: { type: 'string' },
     page: { type: 'number' },
+    all: { type: 'boolean' },
   },
   required: ['formId', 'page'],
 });

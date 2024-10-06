@@ -26,14 +26,22 @@ export class SubmissionService {
     userId: Types.ObjectId,
     formId: Types.ObjectId,
     page: number = 1,
+    all: boolean = false,
   ) {
     const form = await this.formService.getForm(userId, formId);
     if (form) {
-      const limit = 30;
-      return await this.submissionModel
-        .find({ formId, status: SubmissionStatusEnum.PAID })
-        .skip((page - 1) * limit)
-        .sort({ createdAt: -1 });
+      if (all) {
+        return await this.submissionModel
+          .find({ formId, status: SubmissionStatusEnum.PAID })
+          .sort({ createdAt: -1 });
+      } else {
+        const limit = 30;
+        return await this.submissionModel
+          .find({ formId, status: SubmissionStatusEnum.PAID })
+          .skip((page - 1) * limit)
+          .sort({ createdAt: -1 })
+          .limit(limit);
+      }
     }
   }
 }

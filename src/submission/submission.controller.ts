@@ -22,6 +22,7 @@ export class SubmissionController {
       user._id,
       new Types.ObjectId(getSubmissionsDto.formId),
       getSubmissionsDto.page,
+      getSubmissionsDto.all,
     );
   }
 }

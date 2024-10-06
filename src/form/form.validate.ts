@@ -1,10 +1,12 @@
 import { compileSchema } from 'src/utils/validation';
-import { AmountTypeEnum } from './schema/form.schema';
+import { AmountTypeEnum, FormStatusEnum } from './schema/form.schema';
 
 export const createFormVf = compileSchema({
   type: 'object',
   properties: {
     title: { type: 'string' },
+    expiry: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    status: { type: 'string', enum: Object.values(FormStatusEnum) },
     fields: {
       type: 'array',
       items: {
@@ -25,7 +27,7 @@ export const createFormVf = compileSchema({
     },
     amount: { type: 'number', minimum: 1 },
   },
-  required: ['title', 'fields', 'amountType'],
+  required: ['title', 'fields', 'amountType', 'expiry', 'status'],
   allOf: [
     {
       if: {
@@ -55,6 +57,8 @@ export const updateFormVf = compileSchema({
   properties: {
     formId: { type: 'string' },
     title: { type: 'string' },
+    expiry: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+    status: { type: 'string', enum: Object.values(FormStatusEnum) },
     fields: {
       type: 'array',
       items: {
@@ -75,7 +79,7 @@ export const updateFormVf = compileSchema({
     },
     amount: { type: 'number', minimum: 1 },
   },
-  required: ['formId', 'title', 'fields', 'amountType'],
+  required: ['formId', 'title', 'fields', 'amountType', 'expiry', 'status'],
   allOf: [
     {
       if: {

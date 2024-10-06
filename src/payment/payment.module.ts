@@ -16,6 +16,15 @@ import { Transaction, TransactionSchema } from './schema/transaction.schema';
 import { Wallet, WalletSchema } from './schema/wallet.schema';
 import { UserModule } from 'src/user/user.module';
 import { AuthModule } from 'src/auth/auth.module';
+import { PaymentWebService } from './web/payment-web.service';
+import { PaymentWebController } from './web/payment-web.controller';
+import { Transfer, TransferSchema } from './schema/transfer.schema';
+import { PaymentWebhookController } from './webhook/webhook.controller';
+import { PaymentWebhookService } from './webhook/webhook.service';
+import {
+  PayoutWebhook,
+  PayoutWebhookSchema,
+} from './schema/payoutWebhook.schema';
 
 @Module({
   imports: [
@@ -24,14 +33,20 @@ import { AuthModule } from 'src/auth/auth.module';
       { name: CashfreeWebhook.name, schema: CashfreeWebhookSchema },
       { name: Transaction.name, schema: TransactionSchema },
       { name: Wallet.name, schema: WalletSchema },
+      { name: Transfer.name, schema: TransferSchema },
+      { name: PayoutWebhook.name, schema: PayoutWebhookSchema },
     ]),
     forwardRef(() => SubmissionModule),
     forwardRef(() => FormModule),
     forwardRef(() => UserModule),
     forwardRef(() => AuthModule),
   ],
-  providers: [PaymentService],
-  controllers: [PaymentController],
+  providers: [PaymentService, PaymentWebService, PaymentWebhookService],
+  controllers: [
+    PaymentController,
+    PaymentWebController,
+    PaymentWebhookController,
+  ],
   exports: [PaymentService],
 })
 export class PaymentModule {}

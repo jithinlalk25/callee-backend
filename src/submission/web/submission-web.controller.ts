@@ -11,11 +11,11 @@ export class SubmissionWebController {
 
   @Post('submit')
   async submit(@Body() submitDto: SubmitDto) {
-    console.log('==============123', submitDto);
     validate(submitVf, submitDto);
 
     return await this.submissionWebService.submit(
       new Types.ObjectId(submitDto.formId),
+      submitDto.formVersion,
       submitDto.data,
     );
   }
