@@ -6,13 +6,27 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     rawBody: true,
   });
-  if (process.env.ENV == 'local') {
-    app.enableCors({
-      origin: ['http://localhost:3001'],
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-      credentials: true, // Allow credentials (cookies, etc.) if needed
-    });
+
+  let corsOptions = {};
+
+  switch (process.env.ENV) {
+    case 'local':
+      corsOptions = {
+        origin: ['http://localhost:3001'],
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true,
+      };
+      break;
+    case 'prod':
+      corsOptions = {
+        origin: ['https://callee.app'],
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        credentials: true,
+      };
+      break;
   }
+
+  app.enableCors();
 
   await app.listen(3000);
 }
