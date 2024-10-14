@@ -40,17 +40,15 @@ export class PaymentService {
     private transferModel: Model<Transfer>,
   ) {}
 
-  async createOrder(amount: number) {
+  async createOrder(amount: number, customerDetails: any, orderTags: any) {
     const order = await this.cashfreeOrderModel.create({});
 
     const params = {
       order_id: order._id.toString(),
       order_amount: amount,
       order_currency: 'INR',
-      customer_details: {
-        customer_id: 'customer_id',
-        customer_phone: '9999999999',
-      },
+      customer_details: customerDetails,
+      order_tags: orderTags,
       order_meta: {
         return_url:
           process.env.ENV == 'prod'

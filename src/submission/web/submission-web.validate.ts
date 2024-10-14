@@ -13,6 +13,7 @@ export const submitVf = compileSchema({
         amount: { type: 'number' },
       },
     },
+    whatsAppNumber: { type: 'string' },
   },
-  required: ['formId', 'data', 'formVersion'],
+  required: ['formId', 'data', 'formVersion', 'whatsAppNumber'],
 });

@@ -1,10 +1,15 @@
 import { compileSchema } from 'src/utils/validation';
-import { AmountTypeEnum, FormStatusEnum } from './schema/form.schema';
+import {
+  AmountTypeEnum,
+  FeeCollectedFromEnum,
+  FormStatusEnum,
+} from './schema/form.schema';
 
 export const createFormVf = compileSchema({
   type: 'object',
   properties: {
     title: { type: 'string' },
+    description: { type: 'string' },
     expiry: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     status: { type: 'string', enum: Object.values(FormStatusEnum) },
     fields: {
@@ -26,8 +31,19 @@ export const createFormVf = compileSchema({
       required: ['name'],
     },
     amount: { type: 'number', minimum: 1 },
+    feeCollectedFrom: {
+      type: 'string',
+      enum: Object.values(FeeCollectedFromEnum),
+    },
   },
-  required: ['title', 'fields', 'amountType', 'expiry', 'status'],
+  required: [
+    'title',
+    'fields',
+    'amountType',
+    'expiry',
+    'status',
+    'feeCollectedFrom',
+  ],
   allOf: [
     {
       if: {
@@ -57,6 +73,7 @@ export const updateFormVf = compileSchema({
   properties: {
     formId: { type: 'string' },
     title: { type: 'string' },
+    description: { type: 'string' },
     expiry: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     status: { type: 'string', enum: Object.values(FormStatusEnum) },
     fields: {
@@ -78,8 +95,20 @@ export const updateFormVf = compileSchema({
       required: ['name'],
     },
     amount: { type: 'number', minimum: 1 },
+    feeCollectedFrom: {
+      type: 'string',
+      enum: Object.values(FeeCollectedFromEnum),
+    },
   },
-  required: ['formId', 'title', 'fields', 'amountType', 'expiry', 'status'],
+  required: [
+    'formId',
+    'title',
+    'fields',
+    'amountType',
+    'expiry',
+    'status',
+    'feeCollectedFrom',
+  ],
   allOf: [
     {
       if: {

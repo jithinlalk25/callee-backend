@@ -23,7 +23,16 @@ export class Submission {
   amount: number;
 
   @Prop()
-  amountWithPlatformFee: number;
+  platformFee: number;
+
+  @Prop()
+  amountForUser: number;
+
+  @Prop()
+  finalAmountCollected: number;
+
+  @Prop()
+  whatsAppNumber: string;
 
   @Prop({ index: { unique: true } })
   orderId: Types.ObjectId;

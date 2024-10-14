@@ -14,6 +14,11 @@ export enum FormStatusEnum {
   INACTIVE = 'INACTIVE',
 }
 
+export enum FeeCollectedFromEnum {
+  PAYER = 'PAYER',
+  PAYEE = 'PAYEE',
+}
+
 @Schema()
 class Field {
   @Prop()
@@ -45,6 +50,9 @@ export class Form {
   @Prop()
   title: string;
 
+  @Prop({ default: '' })
+  description: string;
+
   @Prop()
   fields: Field[];
 
@@ -56,6 +64,9 @@ export class Form {
 
   @Prop()
   amount: number;
+
+  @Prop()
+  feeCollectedFrom: FeeCollectedFromEnum;
 
   @Prop({ default: 0 })
   submissionCount: number;

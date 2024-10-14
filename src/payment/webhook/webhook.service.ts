@@ -11,6 +11,7 @@ import { FormService } from 'src/form/form.service';
 import { UserService } from 'src/user/user.service';
 import { SubmissionStatusEnum } from 'src/submission/schema/submission.schema';
 import { CashfreeWebhook } from '../schema/cashfreeWebhook.schema';
+import { sendWhatsAppMessageSuccess } from 'src/utils/whatsapp';
 
 @Injectable()
 export class PaymentWebhookService {
@@ -43,27 +44,37 @@ export class PaymentWebhookService {
         );
         const form = await this.formService.updateFormOnSubmission(
           submission.formId,
-          submission.amount,
+          submission.amountForUser,
         );
         await this.transactionModel.create({
           userId: form.userId,
-          amount: submission.amount,
+          amount: submission.amountForUser,
           type: TransactionTypeEnum.CREDIT,
         });
         await this.walletModel.findOneAndUpdate(
           {
             _id: form.userId,
           },
-          { $inc: { total: submission.amount, balance: submission.amount } },
+          {
+            $inc: {
+              total: submission.amountForUser,
+              balance: submission.amountForUser,
+            },
+          },
           { upsert: true, new: true },
         );
         const user = await this.userService.getUser(form.userId);
         if (user.expoPushToken) {
           await sendPushNotifications(
-            `₹${submission.amount} received for ${form.title}`,
+            `₹${submission.amountForUser} received for ${form.title}`,
             [user.expoPushToken],
           );
         }
+        await sendWhatsAppMessageSuccess(
+          data.data.customer_details.customer_phone,
+          submission.finalAmountCollected,
+          form.title,
+        );
       }
     }
     return {};

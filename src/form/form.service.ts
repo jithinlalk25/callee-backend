@@ -91,7 +91,10 @@ export class FormService {
   }
 
   async getAllForms(userId: Types.ObjectId) {
-    return await this.formModel.find({ userId }).select('-history');
+    return await this.formModel
+      .find({ userId })
+      .select('-history')
+      .sort({ createdAt: -1 });
   }
 
   async deleteForm(userId: Types.ObjectId, formId: Types.ObjectId) {

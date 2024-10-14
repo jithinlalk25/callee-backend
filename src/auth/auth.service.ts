@@ -10,6 +10,7 @@ import { Model, Types } from 'mongoose';
 import { UserService } from 'src/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { AuthUser } from './schema/authUser.schema';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
@@ -29,15 +30,18 @@ export class AuthService {
     return {};
   }
 
-  private async sendWhatsAppOtp(phoneNumber: string) {
+  private async sendOtpSms(phoneNumber: string) {
     if (['dev', 'local'].includes(process.env.ENV)) {
       return '000000';
-    } else if (process.env.ENV == 'prod' && phoneNumber == '0000000000') {
-      return '000000';
+    } else if (process.env.ENV == 'prod' && phoneNumber == '1234567890') {
+      return '028619';
     }
 
     try {
-      return '000000';
+      const response = await axios.get(
+        `https://2factor.in/API/V1/${process.env.SMS_API_KEY}/SMS/+91${phoneNumber}/AUTOGEN2`,
+      );
+      return response.data.OTP;
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException();
@@ -47,7 +51,7 @@ export class AuthService {
   async sendOtp(sendOtpDto: SendOtpDto) {
     const phoneNumber = sendOtpDto.phoneNumber;
 
-    const otp = await this.sendWhatsAppOtp(phoneNumber);
+    const otp = await this.sendOtpSms(phoneNumber);
 
     const otpObj = await this.otpModel.findOne({ _id: phoneNumber }).exec();
 

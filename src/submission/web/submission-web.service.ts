@@ -3,7 +3,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Submission, SubmissionStatusEnum } from '../schema/submission.schema';
 import { Model, Types } from 'mongoose';
 import { FormService } from 'src/form/form.service';
-import { AmountTypeEnum } from 'src/form/schema/form.schema';
+import {
+  AmountTypeEnum,
+  FeeCollectedFromEnum,
+} from 'src/form/schema/form.schema';
 import { Constant } from 'src/utils/constants';
 import { PaymentService } from 'src/payment/payment.service';
 import { hasFormExpired } from 'src/utils/utils';
@@ -16,7 +19,12 @@ export class SubmissionWebService {
     private paymentService: PaymentService,
   ) {}
 
-  async submit(formId: Types.ObjectId, formVersion: string, data: any) {
+  async submit(
+    formId: Types.ObjectId,
+    formVersion: string,
+    data: any,
+    whatsAppNumber: string,
+  ) {
     const form = await this.formService.getFormByQuery({
       _id: formId,
       version: formVersion,
@@ -56,15 +64,34 @@ export class SubmissionWebService {
         break;
     }
 
-    const amountWithPlatformFee =
-      amount + amount * (Constant.PLATFORM_FEE / 100);
+    const platformFee = Number(
+      (amount * (Constant.PLATFORM_FEE / 100)).toFixed(2),
+    );
 
-    const order = await this.paymentService.createOrder(amountWithPlatformFee);
+    const [amountForUser, finalAmountCollected] =
+      form.feeCollectedFrom == FeeCollectedFromEnum.PAYER
+        ? [amount, amount + platformFee]
+        : [amount - platformFee, amount];
+
+    const order = await this.paymentService.createOrder(
+      finalAmountCollected,
+      {
+        customer_id: whatsAppNumber,
+        customer_phone: whatsAppNumber,
+      },
+      {
+        formId: formId.toString(),
+        userId: form.userId.toString(),
+      },
+    );
     await this.submissionModel.create({
       formId,
       data,
       amount,
-      amountWithPlatformFee,
+      finalAmountCollected,
+      platformFee,
+      amountForUser,
+      whatsAppNumber,
       status: SubmissionStatusEnum.DATA_SUBMITTED,
       orderId: new Types.ObjectId(order.order_id),
     });

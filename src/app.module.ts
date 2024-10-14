@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { PaymentModule } from './payment/payment.module';
 import { FormModule } from './form/form.module';
 import { SubmissionModule } from './submission/submission.module';
+import { LogModule } from './log/log.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SubmissionModule } from './submission/submission.module';
     AuthModule,
     PaymentModule,
     FormModule,
+    LogModule,
   ],
   controllers: [AppController],
   providers: [AppService],
