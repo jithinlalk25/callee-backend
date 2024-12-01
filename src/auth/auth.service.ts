@@ -110,6 +110,7 @@ export class AuthService {
 
       return {
         token,
+        user,
       };
     } else {
       throw new BadRequestException();

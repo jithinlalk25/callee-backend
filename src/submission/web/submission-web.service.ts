@@ -54,7 +54,7 @@ export class SubmissionWebService {
         if (!('quantity' in data)) {
           throw new Error('Invalid data');
         }
-        amount = form.amount * data.quantity;
+        amount = Math.round(form.amount * data.quantity);
         break;
       case AmountTypeEnum.CUSTOM:
         if (!('amount' in data)) {
@@ -73,17 +73,22 @@ export class SubmissionWebService {
         ? [amount, amount + platformFee]
         : [amount - platformFee, amount];
 
-    const order = await this.paymentService.createOrder(
+    const order = await this.paymentService.createRazorpayOrder(
       finalAmountCollected,
-      {
-        customer_id: whatsAppNumber,
-        customer_phone: whatsAppNumber,
-      },
+      amountForUser,
       {
         formId: formId.toString(),
         userId: form.userId.toString(),
       },
     );
+    // return;
+
+    // const paymentData = await this.paymentService.createPaymentData(
+    //   finalAmountCollected,
+    //   whatsAppNumber,
+    //   'formId_' + formId.toString(),
+    //   'userId_' + form.userId.toString(),
+    // );
     await this.submissionModel.create({
       formId,
       data,
@@ -93,12 +98,9 @@ export class SubmissionWebService {
       amountForUser,
       whatsAppNumber,
       status: SubmissionStatusEnum.DATA_SUBMITTED,
-      orderId: new Types.ObjectId(order.order_id),
+      orderId: order._id,
     });
 
-    return {
-      paymentSessionId: order.payment_session_id,
-      returnUrl: order.order_meta.return_url,
-    };
+    return order;
   }
 }

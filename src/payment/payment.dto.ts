@@ -1,14 +1,16 @@
-import { TransactionFilterEnum } from './payment.service';
-import { AccountTypeEnum } from './schema/wallet.schema';
-
 export class GetTransactionsDto {
   page: number;
-  filter: TransactionFilterEnum;
 }
 
-export class AddAccountDto {
-  type: AccountTypeEnum;
-  bankAccountNumber: string;
-  bankIfsc: string;
-  vpa: string;
+export class SaveAddressDto {
+  street1: string;
+  street2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+}
+
+export class SaveBankAccountDto {
+  accountNumber: string;
+  ifsc: string;
 }

@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { CashfreeOrder } from './schema/cashfreeOrder.schema';
 import { Model, Types } from 'mongoose';
-import axios from 'axios';
-import { Constant } from 'src/utils/constants';
-import { Transaction, TransactionTypeEnum } from './schema/transaction.schema';
-import { AccountTypeEnum, Wallet } from './schema/wallet.schema';
-import { AddAccountDto } from './payment.dto';
-import { Transfer, TransferStatusEnum } from './schema/transfer.schema';
+import { RazorpayOrder } from './schema/razorpayOrder.schema';
+import { User } from 'src/user/schema/user.schema';
+import { Account } from './schema/account.schema';
+import { RazorpayService } from 'src/services/razorpay';
+import { SaveAddressDto, SaveBankAccountDto } from './payment.dto';
 
 export enum TransactionFilterEnum {
   ALL = 'ALL',
@@ -15,217 +13,148 @@ export enum TransactionFilterEnum {
   DEBIT = 'DEBIT',
 }
 
-const cashfreeHeaders = {
-  'x-api-version': '2023-08-01',
-  'x-client-id': process.env.CASHFREE_CLIENT_ID,
-  'x-client-secret': process.env.CASHFREE_SECRET_KEY,
-};
-
-const cashfreePayoutHeaders = {
-  'x-api-version': '2024-01-01',
-  'x-client-id': process.env.CASHFREE_PAYOUT_CLIENT_ID,
-  'x-client-secret': process.env.CASHFREE_PAYOUT_SECRET_KEY,
-};
-
 @Injectable()
 export class PaymentService {
   constructor(
-    @InjectModel(CashfreeOrder.name)
-    private cashfreeOrderModel: Model<CashfreeOrder>,
-    @InjectModel(Transaction.name)
-    private transactionModel: Model<Transaction>,
-    @InjectModel(Wallet.name)
-    private walletModel: Model<Wallet>,
-    @InjectModel(Transfer.name)
-    private transferModel: Model<Transfer>,
+    @InjectModel(RazorpayOrder.name)
+    private razorpayOrderModel: Model<RazorpayOrder>,
+    @InjectModel(Account.name)
+    private accountModel: Model<Account>,
   ) {}
 
-  async createOrder(amount: number, customerDetails: any, orderTags: any) {
-    const order = await this.cashfreeOrderModel.create({});
-
-    const params = {
-      order_id: order._id.toString(),
-      order_amount: amount,
-      order_currency: 'INR',
-      customer_details: customerDetails,
-      order_tags: orderTags,
-      order_meta: {
-        return_url:
-          process.env.ENV == 'prod'
-            ? `https://callee.app/payment-status/${order._id.toString()}`
-            : `http://localhost:3001/payment-status/${order._id.toString()}`,
-      },
-    };
-
+  async createRazorpayOrder(amount: number, amountForUser: number, notes: any) {
     try {
-      const response = await axios.post(
-        `${Constant.CASHFREE_API_URL}/orders`,
-        params,
+      const order = await RazorpayService.createOrder(
+        amount,
+        notes,
+        'acc_P9mT1MT5gJxhjP',
+        amountForUser,
+      );
+
+      return await this.razorpayOrderModel.create({
+        razorpayOrderId: order.id,
+        order,
+      });
+    } catch (error) {
+      console.error(error);
+      throw new Error('Create order failed');
+    }
+  }
+
+  async getTransactions(userId: Types.ObjectId, page: number = 1) {
+    const account: any = await this.accountModel.findOne({ _id: userId });
+
+    if (account?.linkedAccount?.id) {
+      const payments = await RazorpayService.getLinkedAccountPayments(
+        // account.linkedAccount.id,
+        'acc_P9mT1MT5gJxhjP',
+        page,
+      );
+      return payments.items.map((item) => ({
+        ...item,
+        amount: (item.amount / 100).toFixed(2),
+      }));
+    } else {
+      return [];
+    }
+  }
+
+  async getAccount(userId: Types.ObjectId) {
+    return await this.accountModel
+      .findOne({ _id: userId })
+      .select('address bankAccount');
+  }
+
+  async saveAddress(user: User, address: SaveAddressDto) {
+    user.email = 'test9@callee.app';
+    const account: any = await this.accountModel.findOne({ _id: user._id });
+    if (account.linkedAccount) {
+      const linkedAccount = await RazorpayService.updateLinkedAccount(
+        account.linkedAccount.id,
         {
-          headers: cashfreeHeaders,
+          street1: address.street1,
+          street2: address.street2,
+          city: address.city,
+          state: address.state,
+          postal_code: Number(address.postalCode),
         },
       );
-
-      await this.cashfreeOrderModel.updateOne(
-        { _id: order._id },
-        { response: response.data },
+      return await this.accountModel.findOneAndUpdate(
+        { _id: user._id },
+        { linkedAccount, address },
+        { new: true },
       );
-
-      return response.data;
-    } catch (e) {
-      console.error(e);
-    }
-  }
-
-  async getTransactions(
-    userId: Types.ObjectId,
-    page: number = 1,
-    filter: TransactionFilterEnum = TransactionFilterEnum.ALL,
-  ) {
-    const limit = 30;
-    const query = { userId };
-    switch (filter) {
-      case TransactionFilterEnum.CREDIT:
-        query['type'] = TransactionTypeEnum.CREDIT;
-        break;
-      case TransactionFilterEnum.DEBIT:
-        query['type'] = TransactionTypeEnum.DEBIT;
-        break;
-    }
-    return await this.transactionModel
-      .find(query)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ createdAt: -1 });
-  }
-
-  async getWallet(userId: Types.ObjectId) {
-    let wallet = await this.walletModel.findOne({ _id: userId });
-    if (!wallet) {
-      wallet = await this.walletModel.create({ _id: userId });
-    }
-    return wallet;
-  }
-
-  async transfer(userId: Types.ObjectId) {
-    const wallet = await this.walletModel.findOne({ _id: userId });
-    if (wallet.withdrawLock) {
-      throw new Error('Withdrawal locked');
-    }
-    if (!wallet.account) {
-      throw new Error("Account doesn't exist");
-    }
-
-    await this.walletModel.updateOne({ _id: userId }, { withdrawLock: true });
-
-    const transfer = await this.transferModel.create({
-      userId,
-      amount: wallet.balance,
-    });
-
-    const params = {
-      transfer_id: transfer._id.toString(),
-      transfer_amount: transfer.amount,
-      beneficiary_details: {
-        beneficiary_id: wallet.account.beneficiaryId,
-      },
-    };
-
-    await this.transferModel.updateOne(
-      { _id: transfer._id },
-      { bodyParams: params },
-    );
-    try {
-      const response = await axios.post(
-        `${Constant.CASHFREE_PAYOUT_API_URL}/transfers`,
-        params,
+    } else {
+      const linkedAccount = await RazorpayService.createLinkedAccount(
+        user.email,
+        user.phoneNumber,
+        user.name,
         {
-          headers: cashfreePayoutHeaders,
+          street1: address.street1,
+          street2: address.street2,
+          city: address.city,
+          state: address.state,
+          postal_code: Number(address.postalCode),
         },
       );
-
-      await this.transferModel.updateOne(
-        { _id: transfer._id },
-        { response: response.data, status: TransferStatusEnum.PENDING },
-      );
-
-      await this.walletModel.updateOne(
-        { _id: userId },
-        { withdrawLock: false, $inc: { balance: -transfer.amount } },
-      );
-    } catch (e) {
-      await this.walletModel.updateOne(
-        { _id: userId },
-        { withdrawLock: false },
-      );
-      console.error(e);
-      throw new Error('Trasfer failed');
+      return await this.accountModel.create({
+        _id: user._id,
+        linkedAccount,
+        address,
+      });
     }
   }
 
-  async withdraw(userId: Types.ObjectId) {
-    await this.transfer(userId);
-  }
+  async saveBankAccount(user: User, bankAccount: SaveBankAccountDto) {
+    const account: any = await this.accountModel.findOne({ _id: user._id });
 
-  async getWithdrawals(userId: Types.ObjectId) {
-    return await this.transferModel
-      .find({
-        userId,
-        status: {
-          $in: [
-            TransferStatusEnum.PENDING,
-            TransferStatusEnum.FAILED,
-            TransferStatusEnum.SUCCESS,
-          ],
-        },
-      })
-      .sort({ createdAt: -1 })
-      .select('amount status createdAt');
-  }
-
-  async addAccount(userId: Types.ObjectId, data: AddAccountDto) {
-    const accountDetails =
-      data.type == AccountTypeEnum.BANK
-        ? {
-            bank_account_number: data.bankAccountNumber,
-            bank_ifsc: data.bankIfsc,
-          }
-        : {
-            vpa: data.vpa,
-          };
-    try {
-      const beneficiaryId = userId.toString() + Date.now().toString();
-
-      const response = await axios.post(
-        `${Constant.CASHFREE_PAYOUT_API_URL}/beneficiary`,
-        {
-          beneficiary_instrument_details: accountDetails,
-          beneficiary_id: beneficiaryId,
-          beneficiary_name: 'Name Placeholder',
-        },
-        {
-          headers: cashfreePayoutHeaders,
-        },
+    if (account.bankAccount) {
+      console.log('========jlk');
+      const productConfigUpdate = await RazorpayService.updateProductConfig(
+        account.linkedAccount.id,
+        account.productConfigRequest.id,
+        bankAccount.accountNumber,
+        bankAccount.ifsc,
+        user.name,
       );
-
-      return await this.walletModel.findOneAndUpdate(
-        { _id: userId },
-        { $set: { account: { ...data, beneficiaryId } } },
+      return await this.accountModel.findOneAndUpdate(
+        { _id: user._id },
+        { productConfigUpdate, bankAccount },
+        { new: true },
+      );
+    } else {
+      const stakeholder = await RazorpayService.createStakeholder(
+        account.linkedAccount.id,
+        user.email,
+        user.name,
+      );
+      await this.accountModel.findOneAndUpdate(
+        { _id: user._id },
+        { stakeholder },
         { new: true },
       );
 
-      // return response.data;
-    } catch (e) {
-      console.error(e);
-      throw new Error('Add account failed');
-    }
-  }
+      const productConfigRequest = await RazorpayService.requestProductConfig(
+        account.linkedAccount.id,
+      );
+      await this.accountModel.findOneAndUpdate(
+        { _id: user._id },
+        { productConfigRequest },
+        { new: true },
+      );
 
-  async deleteAccount(userId: Types.ObjectId) {
-    return await this.walletModel.findOneAndUpdate(
-      { _id: userId },
-      { $set: { account: null } },
-      { new: true },
-    );
+      const productConfigUpdate = await RazorpayService.updateProductConfig(
+        account.linkedAccount.id,
+        productConfigRequest.id,
+        bankAccount.accountNumber,
+        bankAccount.ifsc,
+        user.name,
+      );
+      return await this.accountModel.findOneAndUpdate(
+        { _id: user._id },
+        { productConfigUpdate, bankAccount },
+        { new: true },
+      );
+    }
   }
 }

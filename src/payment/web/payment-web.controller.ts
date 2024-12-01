@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { PaymentWebService } from './payment-web.service';
 import { Types } from 'mongoose';
 
@@ -8,6 +8,17 @@ export class PaymentWebController {
 
   @Get('getPaymentStatus/:orderId')
   async getPaymentStatus(@Param('orderId') orderId: string) {
-    return await this.paymentWebService.getPaymentStatus(orderId);
+    return await this.paymentWebService.getPaymentStatus(
+      new Types.ObjectId(orderId),
+    );
+  }
+
+  @Post('razorpaySuccessCallback')
+  async razorpaySuccessCallback(@Body() body: any) {
+    return await this.paymentWebService.razorpaySuccessCallback(
+      new Types.ObjectId(body.orderId),
+      body.razorpayOrderId,
+      body.data,
+    );
   }
 }

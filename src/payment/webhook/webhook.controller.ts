@@ -14,42 +14,13 @@ import * as crypto from 'crypto';
 export class PaymentWebhookController {
   constructor(private paymentWebhookService: PaymentWebhookService) {}
 
-  verifyCashfreeWebhookSignature(ts: string, rawBody: string): string {
-    const body = ts + rawBody;
-    const genSignature = crypto
-      .createHmac('sha256', process.env.CASHFREE_SECRET_KEY)
-      .update(body)
-      .digest('base64');
-    return genSignature;
-  }
-
-  @Post('cashfreeWebhook')
-  async cashfreeWebhook(
-    @Body() data: any,
-    @Headers('x-webhook-timestamp') timestamp: string,
-    @Req() req: RawBodyRequest<Request>,
-  ) {
-    const rawBody = req.rawBody;
-    const signature = this.verifyCashfreeWebhookSignature(
-      timestamp,
-      rawBody.toString(),
-    );
-    const receivedSignature = req.headers['x-webhook-signature'];
-
-    if (signature !== receivedSignature) {
-      console.error('Cashfree webhook signature failed');
-      throw new BadRequestException();
-    }
-    return await this.paymentWebhookService.cashfreeWebhook(data);
-  }
-
-  payoutVerifyWebhookSignature(signature, rawBody, timestamp) {
-    const body = timestamp + rawBody;
-    const secretKey = process.env.CASHFREE_PAYOUT_SECRET_KEY;
+  razorpayOrderWebhookVerification(signature, rawBody) {
     let generatedSignature = crypto
-      .createHmac('sha256', secretKey)
-      .update(body)
-      .digest('base64');
+      .createHmac('sha256', process.env.RAZORPAY_WEBHOOK_SECRET)
+      .update(rawBody)
+      .digest('hex');
+
+    console.log('=======++++++', generatedSignature, signature);
 
     if (generatedSignature === signature) {
       return true;
@@ -59,18 +30,22 @@ export class PaymentWebhookController {
     );
   }
 
-  @Post('payoutWebhook')
-  async payoutWebhook(
+  @Post('razorpayOrderWebhook')
+  async razorpayOrderWebhook(
     @Body() data: any,
-    @Headers('x-webhook-timestamp') timestamp: string,
     @Req() req: RawBodyRequest<Request>,
   ) {
-    this.payoutVerifyWebhookSignature(
-      req.headers['x-webhook-signature'],
+    this.razorpayOrderWebhookVerification(
+      req.headers['x-razorpay-signature'],
       req.rawBody,
-      timestamp,
     );
 
-    return await this.paymentWebhookService.payoutWebhook(data);
+    console.log('---------------123', data);
+
+    return await this.paymentWebhookService.razorpayOrderWebhook(
+      req.headers['x-razorpay-event-id'],
+      data,
+    );
+    // return await this.paymentWebhookService.payoutWebhook(data);
   }
 }

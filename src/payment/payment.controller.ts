@@ -9,9 +9,17 @@ import {
 import { PaymentService } from './payment.service';
 import { User } from 'src/user/schema/user.schema';
 import { LoginGuard } from 'src/auth/guard/login/login.guard';
-import { AddAccountDto, GetTransactionsDto } from './payment.dto';
+import {
+  GetTransactionsDto,
+  SaveAddressDto,
+  SaveBankAccountDto,
+} from './payment.dto';
 import { validate } from 'src/utils/validation';
-import { addAccountVf, getTransactionsVf } from './payment.validate';
+import {
+  getTransactionsVf,
+  saveAddressVf,
+  saveBankAccountVf,
+} from './payment.validate';
 
 @UseGuards(LoginGuard)
 @Controller('payment')
@@ -27,36 +35,29 @@ export class PaymentController {
     return await this.paymentService.getTransactions(
       user._id,
       getTransactionsDto.page,
-      getTransactionsDto.filter,
     );
   }
 
-  @Get('getWallet')
-  async getWallet(@Request() { user }: { user: User }) {
-    return await this.paymentService.getWallet(user._id);
+  @Get('getAccount')
+  async getAccount(@Request() { user }: { user: User }) {
+    return await this.paymentService.getAccount(user._id);
   }
 
-  @Post('withdraw')
-  async withdraw(@Request() { user }: { user: User }) {
-    return await this.paymentService.withdraw(user._id);
-  }
-
-  @Post('getWithdrawals')
-  async getWithdrawals(@Request() { user }: { user: User }) {
-    return await this.paymentService.getWithdrawals(user._id);
-  }
-
-  @Post('addAccount')
-  async addAccount(
+  @Post('saveAddress')
+  async saveAddress(
     @Request() { user }: { user: User },
-    @Body() addAccountDto: AddAccountDto,
+    @Body() saveAddressDto: SaveAddressDto,
   ) {
-    validate(addAccountVf, addAccountDto);
-    return await this.paymentService.addAccount(user._id, addAccountDto);
+    validate(saveAddressVf, saveAddressDto);
+    return await this.paymentService.saveAddress(user, saveAddressDto);
   }
 
-  @Post('deleteAccount')
-  async deleteAccount(@Request() { user }: { user: User }) {
-    return await this.paymentService.deleteAccount(user._id);
+  @Post('saveBankAccount')
+  async saveBankAccount(
+    @Request() { user }: { user: User },
+    @Body() saveBankAccountDto: SaveBankAccountDto,
+  ) {
+    validate(saveBankAccountVf, saveBankAccountDto);
+    return await this.paymentService.saveBankAccount(user, saveBankAccountDto);
   }
 }

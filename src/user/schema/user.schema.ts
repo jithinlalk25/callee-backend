@@ -10,6 +10,17 @@ export class User {
   @Prop({ index: { unique: true } })
   phoneNumber: string;
 
+  @Prop({
+    index: {
+      unique: true,
+      partialFilterExpression: { email: { $exists: true, $ne: null } },
+    },
+  })
+  email: string;
+
+  @Prop()
+  name: string;
+
   @Prop()
   expoPushToken: string;
 }

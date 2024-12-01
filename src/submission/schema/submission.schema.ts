@@ -6,6 +6,7 @@ export type SubmissionDocument = HydratedDocument<Submission>;
 export enum SubmissionStatusEnum {
   DATA_SUBMITTED = 'DATA_SUBMITTED',
   PAID = 'PAID',
+  SETTLED = 'SETTLED',
 }
 
 @Schema({ collection: 'Submission', versionKey: false, timestamps: true })

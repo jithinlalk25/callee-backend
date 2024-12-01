@@ -5,6 +5,7 @@ export async function sendWhatsAppMessageSuccess(
   amount: number,
   title: string,
 ): Promise<void> {
+  return;
   const url =
     'https://api.msg91.com/api/v5/whatsapp/whatsapp-outbound-message/bulk/';
 

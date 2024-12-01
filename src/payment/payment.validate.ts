@@ -1,23 +1,30 @@
 import { compileSchema } from 'src/utils/validation';
-import { TransactionFilterEnum } from './payment.service';
-import { AccountTypeEnum } from './schema/wallet.schema';
 
 export const getTransactionsVf = compileSchema({
   type: 'object',
   properties: {
     page: { type: 'number' },
-    filter: { type: 'string', enum: Object.values(TransactionFilterEnum) },
   },
-  required: ['page', 'filter'],
+  required: ['page'],
 });
 
-export const addAccountVf = compileSchema({
+export const saveAddressVf = compileSchema({
   type: 'object',
   properties: {
-    type: { type: 'string', enum: Object.values(AccountTypeEnum) },
-    bankAccountNumber: { type: 'string' },
-    bankIfsc: { type: 'string' },
-    vpa: { type: 'string' },
+    street1: { type: 'string' },
+    street2: { type: 'string' },
+    city: { type: 'string' },
+    state: { type: 'string' },
+    postalCode: { type: 'string' },
   },
-  required: ['type'],
+  required: ['street1', 'street2', 'city', 'state', 'postalCode'],
+});
+
+export const saveBankAccountVf = compileSchema({
+  type: 'object',
+  properties: {
+    accountNumber: { type: 'string' },
+    ifsc: { type: 'string' },
+  },
+  required: ['accountNumber', 'ifsc'],
 });
