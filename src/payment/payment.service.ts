@@ -66,8 +66,11 @@ export class PaymentService {
   }
 
   async saveAddress(user: User, address: SaveAddressDto) {
-    user.email = 'test9@callee.app';
-    const account: any = await this.accountModel.findOne({ _id: user._id });
+    // user.email = 'test9@callee.app';
+    let account: any = await this.accountModel.findOne({ _id: user._id });
+    if (!account) {
+      account = await this.accountModel.create({ _id: user._id });
+    }
     if (account.linkedAccount) {
       const linkedAccount = await RazorpayService.updateLinkedAccount(
         account.linkedAccount.id,
