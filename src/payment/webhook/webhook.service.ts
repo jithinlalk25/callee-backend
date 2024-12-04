@@ -6,7 +6,7 @@ import { SubmissionService } from 'src/submission/submission.service';
 import { FormService } from 'src/form/form.service';
 import { UserService } from 'src/user/user.service';
 import { SubmissionStatusEnum } from 'src/submission/schema/submission.schema';
-import { sendWhatsAppMessageSuccess } from 'src/utils/whatsapp';
+// import { sendWhatsAppMessageSuccess } from 'src/utils/whatsapp';
 import { RazorpayWebhook } from '../schema/razorpayWebhook.schema';
 import { RazorpayOrder } from '../schema/razorpayOrder.schema';
 
@@ -52,11 +52,11 @@ export class PaymentWebhookService {
               [user.expoPushToken],
             );
           }
-          await sendWhatsAppMessageSuccess(
-            submission.whatsAppNumber,
-            submission.finalAmountCollected,
-            form.title,
-          );
+          // await sendWhatsAppMessageSuccess(
+          //   submission.whatsAppNumber,
+          //   submission.finalAmountCollected,
+          //   form.title,
+          // );
         }
       }
     }

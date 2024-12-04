@@ -32,8 +32,8 @@ export class Submission {
   @Prop()
   finalAmountCollected: number;
 
-  @Prop()
-  whatsAppNumber: string;
+  // @Prop()
+  // whatsAppNumber: string;
 
   @Prop({ index: { unique: true } })
   orderId: Types.ObjectId;
