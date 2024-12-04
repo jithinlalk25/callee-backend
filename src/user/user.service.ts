@@ -8,6 +8,7 @@ import { User } from './schema/user.schema';
 import { Model, Types } from 'mongoose';
 import { SendEmailOtpDto, VerifyEmailOtpDto } from './user.dto';
 import { EmailOtp } from './schema/emailOtp.schema';
+import { sendEmail } from 'src/utils/mail';
 
 @Injectable()
 export class UserService {
@@ -40,10 +41,9 @@ export class UserService {
     }
 
     try {
-      // const response = await axios.get(
-      //   `https://2factor.in/API/V1/${process.env.SMS_API_KEY}/SMS/+91${phoneNumber}/AUTOGEN2`,
-      // );
-      // return response.data.OTP;
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      await sendEmail(email, otp);
+      return otp;
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException();
