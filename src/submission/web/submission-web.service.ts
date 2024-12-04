@@ -23,7 +23,7 @@ export class SubmissionWebService {
     formId: Types.ObjectId,
     formVersion: string,
     data: any,
-    whatsAppNumber: string,
+    // whatsAppNumber: string,
   ) {
     const form = await this.formService.getFormByQuery({
       _id: formId,
@@ -96,7 +96,7 @@ export class SubmissionWebService {
       finalAmountCollected,
       platformFee,
       amountForUser,
-      whatsAppNumber,
+      // whatsAppNumber,
       status: SubmissionStatusEnum.DATA_SUBMITTED,
       orderId: order._id,
     });
